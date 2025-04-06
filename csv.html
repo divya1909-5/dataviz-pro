@@ -1,0 +1,995 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Data Graph Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --text-color: #2b2d42;
+            --light-text: #8d99ae;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+            --warning-color: #ff9800;
+            --font-main: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: var(--light-text);
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-box {
+            background-color: var(--card-bg);
+            border: 2px dashed var(--border-color);
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-box:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .upload-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .upload-box:hover::before {
+            opacity: 1;
+        }
+
+        .upload-box p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        #csvFile {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-info {
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            padding: 0.5rem;
+            background-color: rgba(70, 97, 238, 0.05);
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin: 2rem 0;
+            box-shadow: var(--shadow-sm);
+            display: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-color);
+            min-width: 150px;
+            font-size: 0.95rem;
+        }
+
+        select {
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            flex: 1;
+            min-width: 250px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, var(--primary-hover), #3643b7);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 600px;
+            margin: 2rem 0;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .data-preview {
+            margin-top: 3rem;
+            overflow-x: auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(70, 97, 238, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        tr:hover {
+            background-color: rgba(70, 97, 238, 0.05);
+        }
+
+        .column-type {
+            font-size: 0.75rem;
+            color: var(--light-text);
+            margin-left: 0.5rem;
+            font-weight: normal;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+           
+            h1 {
+                font-size: 2rem;
+            }
+           
+            .control-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+           
+            select {
+                width: 100%;
+            }
+           
+            .chart-container {
+                height: 400px;
+                padding: 1rem;
+            }
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+        .back-button {
+            background-color: #1565c0;
+            margin-right: 1rem;
+        }
+
+        .back-button:hover {
+            background-color: #0d47a1;
+        }
+        .button-container {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+       
+        /* Chart actions */
+        .chart-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+       
+        .chart-actions button {
+            padding: 0.75rem 1.5rem;
+        }
+       
+        .download-btn {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+       
+        .download-btn:hover {
+            background: linear-gradient(135deg, #3d8b40, #1b5e20);
+        }
+       
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+       
+        .toast.show {
+            opacity: 1;
+        }
+       
+        /* AI Recommendation */
+        .ai-recommendation {
+            background-color: rgba(76, 201, 240, 0.1);
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+       
+        .ai-recommendation h4 {
+            color: var(--accent-color);
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+       
+        .ai-recommendation h4 svg {
+            width: 20px;
+            height: 20px;
+        }
+       
+        .ai-recommendation p {
+            margin-bottom: 0;
+            color: var(--text-color);
+        }
+       
+        .use-recommendation {
+            background: linear-gradient(135deg, var(--accent-color), #3a86ff);
+            margin-top: 0.5rem;
+        }
+       
+        .use-recommendation:hover {
+            background: linear-gradient(135deg, #3ab0d4, #2a75e6);
+        }
+       
+        /* Data Summary */
+        .data-summary {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+       
+        .summary-item {
+            margin-bottom: 1rem;
+        }
+       
+        .summary-item h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+       
+        .summary-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+       
+        .stat-card {
+            background-color: rgba(70, 97, 238, 0.05);
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            min-width: 120px;
+        }
+       
+        .stat-card h5 {
+            margin: 0 0 0.25rem 0;
+            color: var(--light-text);
+            font-size: 0.8rem;
+        }
+       
+        .stat-card p {
+            margin: 0;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="button-container">
+        <button class="back-button" id="backButton">← Back to Main Page</button>
+    </div>
+    <h1>CSV Data Graph Generator</h1>
+    <p>Upload a CSV file to visualize your data as interactive charts</p>
+   
+    <div class="upload-box">
+        <p>Drag & drop your CSV file here or click to browse</p>
+        <input type="file" id="csvFile" accept=".csv">
+        <div class="file-info" id="fileInfo"></div>
+    </div>
+   
+    <div class="controls" id="controls">
+        <div class="control-group">
+            <label for="categoryColumn">Category (X-axis):</label>
+            <select id="categoryColumn"></select>
+        </div>
+        <div class="control-group">
+            <label for="valueColumn">Value (Y-axis):</label>
+            <select id="valueColumn"></select>
+        </div>
+        <div class="control-group">
+            <label for="chartType">Chart Type:</label>
+            <select id="chartType">
+                <option value="bar">Bar Chart (best for categories)</option>
+                <option value="line">Line Chart</option>
+                <option value="pie" selected>Pie Chart</option>
+                <option value="doughnut">Doughnut Chart</option>
+                <option value="scatter">Scatter Plot</option>
+                <option value="bubble">Bubble Chart</option>
+                <option value="radar">Radar Chart</option>
+                <option value="histogram">Histogram</option>
+            </select>
+        </div>
+       
+        <div class="ai-recommendation" id="aiRecommendation" style="display: none;">
+            <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                </svg>
+                Recommended by AI
+            </h4>
+            <p id="recommendationText">Based on your data, we recommend using a <strong>Pie Chart</strong> to best visualize the relationship between these columns.</p>
+            <button class="use-recommendation" id="useRecommendationBtn">Use This Recommendation</button>
+        </div>
+       
+        <button id="generateBtn">Generate Graph</button>
+    </div>
+   
+    <div class="chart-container">
+        <canvas id="dataChart"></canvas>
+    </div>
+   
+    <div class="chart-actions" id="chartActions" style="display: none;">
+        <button class="download-btn" id="downloadBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+            </svg>
+            Download Chart
+        </button>
+    </div>
+
+    <div class="data-preview">
+        <h3>Data Preview</h3>
+        <div id="tableContainer"></div>
+    </div>
+   
+    <div class="data-summary" id="dataSummary" style="display: none;">
+        <h3>Data Summary</h3>
+        <div id="summaryContent"></div>
+    </div>
+   
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // DOM elements
+        const fileInput = document.getElementById('csvFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const controls = document.getElementById('controls');
+        const categoryColumnSelect = document.getElementById('categoryColumn');
+        const valueColumnSelect = document.getElementById('valueColumn');
+        const chartTypeSelect = document.getElementById('chartType');
+        const generateBtn = document.getElementById('generateBtn');
+        const tableContainer = document.getElementById('tableContainer');
+        const ctx = document.getElementById('dataChart').getContext('2d');
+        const backButton = document.getElementById('backButton');
+        const chartActions = document.getElementById('chartActions');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const toast = document.getElementById('toast');
+        const aiRecommendation = document.getElementById('aiRecommendation');
+        const recommendationText = document.getElementById('recommendationText');
+        const useRecommendationBtn = document.getElementById('useRecommendationBtn');
+        const dataSummary = document.getElementById('dataSummary');
+        const summaryContent = document.getElementById('summaryContent');
+       
+        // Global variables
+        let csvData = [];
+        let columnTypes = {};
+        let currentChart = null;
+
+        // Event listeners
+        fileInput.addEventListener('change', handleFileSelect);
+        generateBtn.addEventListener('click', generateChart);
+        backButton.addEventListener('click', () => {
+            window.location.href = 'welcome.html';
+        });
+        downloadBtn.addEventListener('click', downloadChart);
+        useRecommendationBtn.addEventListener('click', useRecommendedChart);
+       
+        // Drag and drop functionality
+        const uploadBox = document.querySelector('.upload-box');
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.style.borderColor = '#4CAF50';
+            uploadBox.style.backgroundColor = '#f8f8f8';
+        });
+       
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.style.borderColor = '#ccc';
+            uploadBox.style.backgroundColor = '';
+        });
+       
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.style.borderColor = '#ccc';
+            uploadBox.style.backgroundColor = '';
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect({ target: fileInput });
+            } else {
+                alert('Please upload a valid CSV file');
+            }
+        });
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+           
+            fileInfo.textContent = `Loading: ${file.name}...`;
+            fileInfo.classList.add('loading');
+           
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    fileInfo.classList.remove('loading');
+                    if (results.data.length === 0 || !results.meta.fields) {
+                        fileInfo.textContent = 'Error: No valid data found in CSV';
+                        return;
+                    }
+                   
+                    csvData = results.data;
+                    analyzeColumns(results.meta.fields);
+                   
+                    fileInfo.textContent = `Loaded: ${file.name} (${csvData.length} rows, ${results.meta.fields.length} columns)`;
+                    setupColumnSelects();
+                    createDataPreview();
+                    controls.style.display = 'block';
+                    generateChart();
+                },
+                error: function(error) {
+                    fileInfo.classList.remove('loading');
+                    fileInfo.textContent = 'Error parsing CSV file';
+                    console.error('CSV Error:', error);
+                }
+            });
+        }
+
+        // Analyze columns to determine their types
+        function analyzeColumns(columns) {
+            columnTypes = {};
+           
+            // Check first 10 rows to determine column types
+            const sampleSize = Math.min(10, csvData.length);
+           
+            columns.forEach(col => {
+                let hasNumbers = false;
+                let hasText = false;
+               
+                for (let i = 0; i < sampleSize; i++) {
+                    const value = csvData[i][col];
+                    if (value === null || value === undefined || value === '') continue;
+                   
+                    if (typeof value === 'number') {
+                        hasNumbers = true;
+                    } else if (typeof value === 'string') {
+                        hasText = true;
+                    }
+                }
+               
+                if (hasNumbers && !hasText) {
+                    columnTypes[col] = 'number';
+                } else if (hasText && !hasNumbers) {
+                    columnTypes[col] = 'text';
+                } else {
+                    columnTypes[col] = 'mixed';
+                }
+            });
+        }
+
+        // Set up the column dropdowns with type information
+        function setupColumnSelects() {
+            // Clear previous options
+            categoryColumnSelect.innerHTML = '';
+            valueColumnSelect.innerHTML = '';
+           
+            // Add options for each column with type indicators
+            Object.keys(columnTypes).forEach(col => {
+                const type = columnTypes[col];
+                const typeLabel = type === 'number' ? ' (number)' :
+                                 type === 'text' ? ' (text)' : ' (mixed)';
+               
+                // Add to category dropdown (prefer text columns)
+                const categoryOption = new Option(col + typeLabel, col);
+                categoryColumnSelect.add(categoryOption);
+               
+                // Add to value dropdown (prefer number columns)
+                const valueOption = new Option(col + typeLabel, col);
+                valueColumnSelect.add(valueOption);
+            });
+           
+            // Set default selections (first text column for category, first number column for value)
+            const columns = Object.keys(columnTypes);
+            const defaultCategory = columns.find(col => columnTypes[col] === 'text') || columns[0];
+            const defaultValue = columns.find(col => columnTypes[col] === 'number') || (columns[1] || columns[0]);
+           
+            categoryColumnSelect.value = defaultCategory;
+            valueColumnSelect.value = defaultValue;
+           
+            // Generate AI recommendation
+            generateAIRecommendation(defaultCategory, defaultValue);
+        }
+
+        // Generate AI recommendation for chart type
+        function generateAIRecommendation(categoryCol, valueCol) {
+            // Simple AI logic to recommend chart type based on data characteristics
+            const categoryType = columnTypes[categoryCol];
+            const valueType = columnTypes[valueCol];
+            const uniqueCategories = new Set(csvData.map(row => row[categoryCol])).size;
+            const valueRange = getValueRange(valueCol);
+           
+            let recommendedChart = 'pie';
+            let recommendationReason = '';
+           
+            if (categoryType === 'text' && valueType === 'number') {
+                if (uniqueCategories <= 7) {
+                    recommendedChart = 'pie';
+                    recommendationReason = `Pie charts work well when showing parts of a whole with a small number (${uniqueCategories}) of categories.`;
+                } else if (uniqueCategories <= 15) {
+                    recommendedChart = 'bar';
+                    recommendationReason = `With ${uniqueCategories} categories, a bar chart will better display the comparisons between values.`;
+                } else {
+                    recommendedChart = 'line';
+                    recommendationReason = `With many categories (${uniqueCategories}), a line chart can better show trends without clutter.`;
+                }
+               
+                if (valueRange.max / valueRange.min > 100) {
+                    recommendedChart = 'bar';
+                    recommendationReason += " The wide range of values makes a bar chart more suitable.";
+                }
+            } else if (categoryType === 'number' && valueType === 'number') {
+                recommendedChart = 'scatter';
+                recommendationReason = "Since both axes are numerical, a scatter plot can best show the relationship between these variables.";
+            } else {
+                recommendedChart = 'bar';
+                recommendationReason = "This combination of data types is best visualized with a bar chart.";
+            }
+           
+            recommendationText.innerHTML = `Based on your data, we recommend using a <strong>${recommendedChart.charAt(0).toUpperCase() + recommendedChart.slice(1)} Chart</strong>. ${recommendationReason}`;
+            aiRecommendation.dataset.recommendedChart = recommendedChart;
+            aiRecommendation.style.display = 'block';
+        }
+       
+        // Get the range of values in a column
+        function getValueRange(column) {
+            const values = csvData.map(row => row[column]).filter(val => typeof val === 'number');
+            if (values.length === 0) return { min: 0, max: 0 };
+           
+            return {
+                min: Math.min(...values),
+                max: Math.max(...values)
+            };
+        }
+       
+        // Use the AI recommended chart type
+        function useRecommendedChart() {
+            const recommendedChart = aiRecommendation.dataset.recommendedChart;
+            chartTypeSelect.value = recommendedChart;
+            generateChart();
+            showToast(`Using recommended ${recommendedChart} chart`);
+        }
+
+        // Generate the chart based on selected options
+        function generateChart() {
+            const categoryCol = categoryColumnSelect.value;
+            const valueCol = valueColumnSelect.value;
+            const chartType = chartTypeSelect.value;
+           
+            // Prepare data
+            const labels = csvData.map(row => row[categoryCol]);
+            const data = csvData.map(row => row[valueCol]);
+           
+            // Destroy previous chart if exists
+            if (currentChart) {
+                currentChart.destroy();
+            }
+           
+            // Create new chart
+            const baseConfig = {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: valueCol,
+                        data: data,
+                        backgroundColor: getBackgroundColors(chartType, data.length),
+                        borderColor: (chartType === 'line' || chartType === 'scatter') ? 'rgba(75, 192, 192, 1)' : undefined,
+                        borderWidth: (chartType === 'line' || chartType === 'scatter') ? 2 : undefined
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${valueCol} by ${categoryCol}`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${valueCol}: ${context.parsed.y || context.raw}`;
+                                },
+                                afterLabel: function(context) {
+                                    return `${categoryCol}: ${context.label}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: (chartType !== 'pie' && chartType !== 'doughnut' && chartType !== 'radar') ? {
+                        x: {
+                            title: {
+                                display: true,
+                                text: categoryCol
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: valueCol
+                            },
+                            beginAtZero: chartType === 'bar' || chartType === 'line'
+                        }
+                    } : undefined
+                }
+            };
+
+            // Special configurations for specific chart types
+            if (chartType === 'bubble') {
+                // For bubble chart, we need to add radius data
+                const maxValue = Math.max(...data);
+                baseConfig.data.datasets[0].data = data.map((value, index) => ({
+                    x: index,
+                    y: value,
+                    r: (value / maxValue) * 30 + 10
+                }));
+                baseConfig.type = 'bubble';
+                baseConfig.options.scales = {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Index'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: valueCol
+                        },
+                        beginAtZero: true
+                    }
+                };
+            } else if (chartType === 'radar') {
+                baseConfig.options.scales = {
+                    r: {
+                        beginAtZero: true
+                    }
+                };
+            } else if (chartType === 'histogram') {
+                baseConfig.type = 'bar';
+                baseConfig.options.scales.x.type = 'linear';
+                baseConfig.options.scales.x.offset = true;
+                baseConfig.options.scales.x.ticks = {
+                    stepSize: 1
+                };
+            }
+           
+            currentChart = new Chart(ctx, baseConfig);
+           
+            // Show chart actions
+            chartActions.style.display = 'flex';
+           
+            // Generate data summary
+            generateDataSummary(categoryCol, valueCol, chartType);
+        }
+
+        // Generate appropriate background colors based on chart type
+        function getBackgroundColors(chartType, count) {
+            if (chartType === 'pie' || chartType === 'doughnut' || chartType === 'radar') {
+                const colors = [];
+                for (let i = 0; i < count; i++) {
+                    const hue = (i * 360 / count) % 360;
+                    colors.push(`hsl(${hue}, 70%, 50%)`);
+                }
+                return colors;
+            } else if (chartType === 'bar' || chartType === 'histogram') {
+                // Different color for each bar
+                const colors = [];
+                for (let i = 0; i < count; i++) {
+                    const hue = (i * 360 / count) % 360;
+                    colors.push(`hsla(${hue}, 70%, 50%, 0.7)`);
+                }
+                return colors;
+            } else {
+                return 'rgba(75, 192, 192, 0.5)';
+            }
+        }
+
+        // Create data preview table
+        function createDataPreview() {
+            const columns = Object.keys(columnTypes);
+            let tableHTML = '<table><thead><tr>';
+           
+            // Create header row with type indicators
+            columns.forEach(col => {
+                const type = columnTypes[col];
+                const typeLabel = type === 'number' ? ' (number)' :
+                                 type === 'text' ? ' (text)' : ' (mixed)';
+                tableHTML += `<th>${col}<span class="column-type">${typeLabel}</span></th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+           
+            // Create data rows (limit to 50 for performance)
+            const rowCount = Math.min(50, csvData.length);
+            for (let i = 0; i < rowCount; i++) {
+                tableHTML += '<tr>';
+                columns.forEach(col => {
+                    tableHTML += `<td>${csvData[i][col] !== undefined ? csvData[i][col] : ''}</td>`;
+                });
+                tableHTML += '</tr>';
+            }
+           
+            tableHTML += '</tbody></table>';
+           
+            if (csvData.length > 50) {
+                tableHTML += `<p>Showing first 50 rows of ${csvData.length}</p>`;
+            }
+           
+            tableContainer.innerHTML = tableHTML;
+        }
+       
+        // Generate data summary
+        function generateDataSummary(categoryCol, valueCol, chartType) {
+            const categoryType = columnTypes[categoryCol];
+            const valueType = columnTypes[valueCol];
+            const uniqueCategories = new Set(csvData.map(row => row[categoryCol])).size;
+            const valueRange = getValueRange(valueCol);
+            const valueData = csvData.map(row => row[valueCol]).filter(val => typeof val === 'number');
+            const sum = valueData.reduce((a, b) => a + b, 0);
+            const avg = sum / valueData.length;
+           
+            let summaryHTML = `
+                <div class="summary-item">
+                    <h4>Chart Summary</h4>
+                    <p>This ${chartType} chart shows the relationship between <strong>${categoryCol}</strong> (${categoryType}) and <strong>${valueCol}</strong> (${valueType}).</p>
+                </div>
+               
+                <div class="summary-item">
+                    <h4>Data Statistics</h4>
+                    <div class="summary-stats">
+                        <div class="stat-card">
+                            <h5>Unique Categories</h5>
+                            <p>${uniqueCategories}</p>
+                        </div>
+            `;
+           
+            if (valueType === 'number') {
+                summaryHTML += `
+                        <div class="stat-card">
+                            <h5>Average Value</h5>
+                            <p>${avg.toFixed(2)}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h5>Minimum Value</h5>
+                            <p>${valueRange.min}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h5>Maximum Value</h5>
+                            <p>${valueRange.max}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h5>Total</h5>
+                            <p>${sum.toFixed(2)}</p>
+                        </div>
+                `;
+            }
+           
+            summaryHTML += `
+                    </div>
+                </div>
+               
+                <div class="summary-item">
+                    <h4>Chart Interpretation</h4>
+                    <p>${getChartInterpretation(chartType, categoryCol, valueCol)}</p>
+                </div>
+            `;
+           
+            summaryContent.innerHTML = summaryHTML;
+            dataSummary.style.display = 'block';
+        }
+       
+        // Get interpretation text for the chart
+        function getChartInterpretation(chartType, categoryCol, valueCol) {
+            switch(chartType) {
+                case 'pie':
+                case 'doughnut':
+                    return `This ${chartType} chart shows how each category in <strong>${categoryCol}</strong> contributes to the total of <strong>${valueCol}</strong>. The size of each slice represents its proportion of the whole.`;
+                case 'bar':
+                    return `This bar chart compares the values of <strong>${valueCol}</strong> across different categories in <strong>${categoryCol}</strong>. The height of each bar represents its value, making comparisons easy.`;
+                case 'line':
+                    return `This line chart shows trends or patterns in <strong>${valueCol}</strong> across the categories in <strong>${categoryCol}</strong>. The line connects data points to show progression.`;
+                case 'scatter':
+                    return `This scatter plot displays the relationship between <strong>${categoryCol}</strong> and <strong>${valueCol}</strong>. Each point represents an observation, showing how the two variables correlate.`;
+                case 'bubble':
+                    return `This bubble chart visualizes the values of <strong>${valueCol}</strong>, where the size of each bubble represents its magnitude.`;
+                case 'radar':
+                    return `This radar chart displays the values of <strong>${valueCol}</strong> across different categories in <strong>${categoryCol}</strong>, showing patterns in a circular format.`;
+                case 'histogram':
+                    return `This histogram shows the distribution of values for <strong>${valueCol}</strong>, grouping values into bins to visualize frequency.`;
+                default:
+                    return `This chart visualizes the relationship between <strong>${categoryCol}</strong> and <strong>${valueCol}</strong>.`;
+            }
+        }
+       
+        // Download chart as PNG image
+        function downloadChart() {
+            if (!currentChart) return;
+           
+            const link = document.createElement('a');
+            link.download = 'chart.png';
+            link.href = document.getElementById('dataChart').toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+           
+            showToast('Chart downloaded successfully!');
+        }
+       
+        // Show toast notification
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.style.backgroundColor = isError ? 'var(--error-color)' : '#333';
+            toast.classList.add('show');
+           
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

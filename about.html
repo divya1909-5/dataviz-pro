@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Data Vizpro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f5f9ff;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .about-header {
+            background: linear-gradient(135deg, #1e88e5, #0d47a1);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .about-header h1 {
+            font-size: 2.5rem;
+        }
+
+        .about-content {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .about-card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .about-card h2 {
+            color: #1e88e5;
+            margin: 0 0 1.5rem 0;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #e3f2fd;
+            padding-bottom: 0.5rem;
+        }
+
+        .feature-item {
+            margin-bottom: 1.8rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .feature-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .feature-item h3 {
+            color: #1565c0;
+            margin-bottom: 0.8rem;
+            font-size: 1.25rem;
+        }
+
+        .feature-item p {
+            margin-bottom: 0;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .feature-item.highlight {
+            background-color: #e3f2fd;
+            padding: 1.2rem;
+            border-radius: 6px;
+            border-left: 4px solid #1e88e5;
+            margin: 2rem -1.2rem 1.5rem;
+        }
+
+        .feature-item.highlight h3 {
+            color: #0d47a1;
+        }
+
+        .back-btn {
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background-color: #1565c0;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .about-footer {
+            background-color: #0d47a1;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="about-header">
+        <h1>About Dataviz Pro</h1>
+    </header>
+
+    <main class="about-content">
+        <div class="about-card">
+            <h2>Our Features</h2>
+            
+            <div class="feature-item">
+                <h3>File Upload & Storage</h3>
+                <p>Users can upload CSV or JSON files securely to our platform for processing and storage. Our system supports various file formats and sizes with robust encryption.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>Automated Data Analysis</h3>
+                <p>Our advanced backend processing automatically detects patterns, trends, and correlations in your data, providing valuable insights without manual configuration.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>Dynamic Visualization Generation</h3>
+                <p>Creates interactive, responsive charts using cutting-edge visualization libraries. Visualizations automatically adapt to your data structure for optimal presentation.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>Data Filtering & Customization</h3>
+                <p>Users can refine datasets with powerful filtering tools and customize visualizations with various styling options to match their preferences and reporting needs.</p>
+            </div>
+            
+            <div class="feature-item highlight">
+                <h3>AI-Driven Chart Recommendation</h3>
+                <p>Our intelligent system analyzes your dataset properties and suggests the most effective visualization type to best represent your data patterns and relationships.</p>
+            </div>
+            
+            <a href="welcome.html" class="back-btn">Back to Home</a>
+        </div>
+    </main>
+
+    <footer class="about-footer">
+        <p>&copy; 2025 Dataviz Pro. All rights reserved.</p>
+    </footer>
+</body>
+</html>
